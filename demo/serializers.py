@@ -4,9 +4,7 @@ from django.conf import settings
 from rest_framework import serializers
 from demo.utils import send_otp
 
-from .models import UserModel, UploadImage,UploadVideo
-
-
+from .models import UserModel, UserProfile , ResidentialAddress
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -77,60 +75,12 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class UploadImageSerializer(serializers.ModelSerializer):
-    """
-    Upload Image Serializer.
-
-    Used in POST and GET
-    """
-
-    class Meta:
-        model = UploadImage
-        fields = (
-            "id",
-            "image",
-            "user"
-        )
-        read_only_fields = ("id",)
-
-    def create(self, validated_data):
-        """
-        Create method.
-
-        Used to create the user
-        """
-        image = UploadImage(
-            image=validated_data["image"],
-            user=validated_data["user"]
-        )
-        image.save()
-        return image     
-
-class UploadVideoSerializer(serializers.ModelSerializer):
-    """
-    Upload Image Serializer.
-
-    Used in POST and GET
-    """
-
-    class Meta:
-        model = UploadVideo
-        fields = (
-            "id",
-            "video",
-            "user"
-        )
-        read_only_fields = ("id",)
-
-    def create(self, validated_data):
-        """
-        Create method.
-
-        Used to create the user
-        """
-        video = UploadVideo(
-            video=validated_data["video"],
-            user=validated_data["user"]
-        )
-        video.save()
-        return video
+class  UserAccountSerializer(serializers.ModelSerializer) : 
+    class Meta : 
+        model = UserProfile
+        fields = "__all__"
+        
+class ResidentialAddressSerializer(serializers.ModelSerializer) : 
+    class Meta : 
+        model = ResidentialAddress
+        fields = "__all__"

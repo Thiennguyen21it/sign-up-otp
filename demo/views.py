@@ -6,11 +6,12 @@ from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from demo.utils import send_otp
+from .models import UserModel, UserProfile , ResidentialAddress
+from .serializers import UserSerializer, UserAccountSerializer , ResidentialAddressSerializer
 
-from .models import UserModel, UploadImage
-from .serializers import UserSerializer, UploadImageSerializer ,UploadVideoSerializer
+
+
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -74,79 +75,77 @@ class UserViewSet(viewsets.ModelViewSet):
             instance.max_otp_try = max_otp_try
         instance.save()
         send_otp(instance.phone_number, otp)
-        return Response("Successfully generate new OTP.", status=status.HTTP_200_OK)
+        #after successfull otp generation retrun otp with message you can use this otp for verification
+        return Response( {"otp":otp,"message":"you can use this otp for verification"}, status=status.HTTP_200_OK)
+
+        #login with phone number
+    # @action(detail=True, methods=["POST"])
+    # def login(self, request, pk=None):
+    #     instance = self.get_object()
+    #     if instance.is_active and instance.phone_number == request.data.get("phone_number"):
+    #         return Response(
+    #             "Successfully logged in.",
+    #             status=status.HTTP_200_OK,
+    #         )
+        
+
+    #     return Response(
+    #         "User not active or Please enter the correct phone number.",
+    #         status=status.HTTP_400_BAD_REQUEST,
+    #     )
+    @action(detail=False, methods=["POST"])
+    def login(self, request):
+        """
+        Login with phone number and password.
+        """
+       
+        phone_number = request.data.get("phone_number")
+        password = request.data.get("password")
+        
 
 
-class UploadImageViewSet(viewsets.ModelViewSet):
-    """
-    UploadImageView View.
-    """
+        if phone_number and password:
+            try:
+                user = UserModel.objects.get(phone_number=phone_number)
+                if user.is_active:
+                    if user.check_password(password):
+                        return Response(
+                        "Successfully logged in.", status=status.HTTP_200_OK
+                        )
+                    else:
+                        return Response(
+                        "Wrong password", status=status.HTTP_400_BAD_REQUEST
+                        )
+            except UserModel.DoesNotExist:
+                return Response(
+                    "Invalid credentials.", status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response(
+                "Please provide phone number and password.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+              
 
-    queryset = UploadImage.objects.all()
-    serializer_class = UploadImageSerializer
 
-    def get_queryset(self):
-        """
-        Filter queryset by user.
-        """
-        queryset = self.queryset
-        user = self.request.user
-        if user.is_authenticated:
-            queryset = queryset.filter(user=user)
-        return queryset
 
-    def perform_create(self, serializer):
-        """
-        Set user to the current user.
-        """
-        serializer.save(user=self.request.user)
+# all information about the user
 
-    def perform_update(self, serializer):
-        """
-        Set user to the current user.
-        """
-        serializer.save(user=self.request.user)
+class UserAccountViewSet(viewsets.ModelViewSet):
+    #after login with phone user can see all imformation about the user and update user in formation 
+    # like full name, email, password
 
-    def perform_destroy(self, instance):
-        """
-        Set user to the current user.
-        """
-        instance.user = self.request.user
-        instance.save()
+    queryset = UserProfile.objects.all()
+    serializer_class = UserAccountSerializer
 
-class UploadVideoViewSet(viewsets.ModelViewSet):
-    """
-    UploadImageView View.
-    """
+    
+    
+class ResidentialAddressViewSet(viewsets.ModelViewSet):
+    queryset = ResidentialAddress.objects.all()
+    serializer_class = ResidentialAddressSerializer
 
-    queryset = UploadImage.objects.all()
-    serializer_class = UploadVideoSerializer
 
-    def get_queryset(self):
-        """
-        Filter queryset by user.
-        """
-        queryset = self.queryset
-        user = self.request.user
-        if user.is_authenticated:
-            queryset = queryset.filter(user=user)
-        return queryset
 
-    def perform_create(self, serializer):
-        """
-        Set user to the current user.
-        """
-        serializer.save(user=self.request.user)
+    
 
-    def perform_update(self, serializer):
-        """
-        Set user to the current user.
-        """
-        serializer.save(user=self.request.user)
 
-    def perform_destroy(self, instance):
-        """
-        Set user to the current user.
-        """
-        instance.user = self.request.user
-        instance.save()
